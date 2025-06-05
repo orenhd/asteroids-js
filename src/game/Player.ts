@@ -12,6 +12,8 @@ export class Player extends GameObject {
     private readonly COLLISION_RADIUS = 15; // Pixels
     private readonly EXPLOSION_DURATION = 2000; // Milliseconds
     private readonly CHEVRON_DEPTH = 5; // How far up the base point moves
+    private readonly MIN_THRUST_SPEED = 50; // Speed at which thrust starts showing
+    private readonly MAX_THRUST_SPEED = 200; // Speed at which thrust is fully visible
 
     private input: InputManager;
     private thrusting: boolean = false;
@@ -109,13 +111,22 @@ export class Player extends GameObject {
         ctx.lineTo(0, -15);     // Back to nose
         ctx.stroke();
 
-        // Draw thrust
-        if (this.thrusting) {
-            ctx.beginPath();
-            ctx.moveTo(-5, 15);    // Left
-            ctx.lineTo(0, 20);     // Bottom
-            ctx.lineTo(5, 15);     // Right
-            ctx.stroke();
+        // Calculate thrust alpha based on velocity
+        const speed = this.velocity.magnitude();
+        if (speed > this.MIN_THRUST_SPEED) {
+            // Calculate thrust alpha based on current speed
+            const thrustAlpha = Math.min(1, (speed - this.MIN_THRUST_SPEED) / 
+                (this.MAX_THRUST_SPEED - this.MIN_THRUST_SPEED));
+            
+            // Only show thrust when actually thrusting or at significant speed
+            if (this.thrusting || thrustAlpha > 0.3) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
+                ctx.moveTo(-5, 15);    // Left
+                ctx.lineTo(0, 20);     // Bottom
+                ctx.lineTo(5, 15);     // Right
+                ctx.stroke();
+            }
         }
 
         ctx.restore();
