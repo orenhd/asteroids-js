@@ -11,6 +11,7 @@ export class Player extends GameObject {
     private readonly FIRE_RATE = 250; // Milliseconds between shots
     private readonly COLLISION_RADIUS = 15; // Pixels
     private readonly EXPLOSION_DURATION = 2000; // Milliseconds
+    private readonly CHEVRON_DEPTH = 5; // How far up the base point moves
 
     private input: InputManager;
     private thrusting: boolean = false;
@@ -96,11 +97,16 @@ export class Player extends GameObject {
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 2;
 
-        // Draw triangle - exact coordinates from C# version
-        ctx.moveTo(0, -15);    // Nose
-        ctx.lineTo(10, 15);    // Bottom right
-        ctx.lineTo(-10, 15);   // Bottom left
-        ctx.closePath();
+        // Calculate base point using trigonometry
+        const baseX = 0;
+        const baseY = 15 - this.CHEVRON_DEPTH;
+
+        // Draw triangle with chevron base
+        ctx.moveTo(0, -15);     // Nose
+        ctx.lineTo(10, 15);     // Bottom right
+        ctx.lineTo(baseX, baseY); // Base middle point
+        ctx.lineTo(-10, 15);    // Bottom left
+        ctx.lineTo(0, -15);     // Back to nose
         ctx.stroke();
 
         // Draw thrust
@@ -139,11 +145,13 @@ export class Player extends GameObject {
             this.explosionTime = 0;
             this.explosionLines = [];
 
-            // Ship points for explosion
+            // Ship points for explosion with chevron
+            const baseY = 15 - this.CHEVRON_DEPTH;
             const points = [
-                new Vector2D(0, -15),    // Nose
-                new Vector2D(10, 15),    // Bottom right
-                new Vector2D(-10, 15)    // Bottom left
+                new Vector2D(0, -15),     // Nose
+                new Vector2D(10, 15),     // Bottom right
+                new Vector2D(0, baseY),   // Base middle
+                new Vector2D(-10, 15)     // Bottom left
             ];
 
             // Create explosion lines
