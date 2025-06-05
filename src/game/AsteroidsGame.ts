@@ -1,83 +1,35 @@
 import { GameEngine } from '../engine/GameEngine';
 import { Player } from './Player';
 import { Asteroid, AsteroidSize } from './Asteroid';
-import { Vector2D } from '../types/Vector2D';
 
 export class AsteroidsGame extends GameEngine {
-    private player!: Player;
-    private readonly CANVAS_WIDTH = 800;
-    private readonly CANVAS_HEIGHT = 600;
+    private player: Player;
     private asteroids: Asteroid[] = [];
-    private score: number = 0;
-    private level: number = 1;
+    private score = 0;
+    private level = 1;
 
-    constructor(canvasId: string) {
-        super(canvasId);
-        this.init();
-    }
-
-    private init(): void {
-        // Set canvas size
-        const canvas = this.getCanvas();
-        canvas.width = this.CANVAS_WIDTH;
-        canvas.height = this.CANVAS_HEIGHT;
-
-        // Create player at center of screen
-        this.player = new Player(
-            this.CANVAS_WIDTH / 2,
-            this.CANVAS_HEIGHT / 2
-        );
-
-        // Start first level
+    constructor(canvas: HTMLCanvasElement) {
+        super(canvas);
+        this.player = new Player(canvas.width / 2, canvas.height / 2);
+        this.gameObjects.push(this.player);
         this.startLevel();
     }
 
-    private startLevel(): void {
-        // Clear any existing asteroids
-        this.asteroids = [];
-
-        // Create initial asteroids
-        const asteroidCount = 2 + this.level;
-        for (let i = 0; i < asteroidCount; i++) {
-            this.spawnAsteroid();
-        }
-    }
-
-    private spawnAsteroid(): void {
-        // Spawn asteroid at random edge position
-        let x, y;
-        if (Math.random() < 0.5) {
-            x = Math.random() < 0.5 ? 0 : this.CANVAS_WIDTH;
-            y = Math.random() * this.CANVAS_HEIGHT;
-        } else {
-            x = Math.random() * this.CANVAS_WIDTH;
-            y = Math.random() < 0.5 ? 0 : this.CANVAS_HEIGHT;
-        }
-        
-        this.asteroids.push(new Asteroid(x, y, AsteroidSize.Large));
-    }
-
-    protected override update(delta: number): void {
-        // Update game objects
-        this.player.update(delta);
-        this.asteroids.forEach(asteroid => asteroid.update(delta));
-
-        // Check collisions
+    protected update(delta: number): void {
+        super.update(delta);
         this.checkCollisions();
-
-        // Check level completion
-        if (this.asteroids.length === 0) {
-            this.level++;
-            this.startLevel();
-        }
     }
 
-    protected override draw(): void {
+    protected draw(): void {
         const ctx = this.getContext();
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-        // Draw game objects
-        this.asteroids.forEach(asteroid => asteroid.draw(ctx));
-        this.player.draw(ctx);
+        // Draw all game objects
+        this.gameObjects.forEach(obj => obj.draw(ctx));
 
         // Draw score
         ctx.font = '20px Arial';
@@ -87,46 +39,113 @@ export class AsteroidsGame extends GameEngine {
         ctx.fillText(`Level: ${this.level}`, 10, 60);
     }
 
-    private checkCollisions(): void {
-        // Check bullet-asteroid collisions
-        const bullets = this.player.getBullets();
-        for (let i = bullets.length - 1; i >= 0; i--) {
-            const bullet = bullets[i];
-            for (let j = this.asteroids.length - 1; j >= 0; j--) {
-                const asteroid = this.asteroids[j];
-                const distance = bullet.getPosition().subtract(asteroid.getPosition()).magnitude();
-                
-                if (distance < asteroid.getRadius()) {
-                    // Split asteroid
-                    const newAsteroids = asteroid.split();
-                    this.asteroids.push(...newAsteroids);
-
-                    // Update score
-                    this.score += (4 - asteroid.getSize()) * 100;
-
-                    // Remove bullet and asteroid
-                    bullet.setActive(false);
-                    this.asteroids.splice(j, 1);
-                    break;
-                }
-            }
-        }
-
-        // Check player-asteroid collisions
-        if (!this.player.isActive()) return;
-        
-        for (const asteroid of this.asteroids) {
-            const distance = this.player.getPosition().subtract(asteroid.getPosition()).magnitude();
-            if (distance < this.player.getCollisionRadius() + asteroid.getRadius()) {
-                // Start explosion animation
-                this.player.explode();
-
-                // Reset player after explosion
-                setTimeout(() => {
-                    this.player = new Player(this.CANVAS_WIDTH / 2, this.CANVAS_HEIGHT / 2);
-                }, 2000);
-                break;
-            }
+    private startLevel(): void {
+        // Create initial asteroids
+        for (let i = 0; i < 4; i++) {
+            this.createAsteroid();
         }
     }
-} 
+
+    private createAsteroid(): void {
+        const ctx = this.getContext();
+        const edge = Math.floor(Math.random() * 4);
+        let x: number, y: number;
+
+        switch (edge) {
+            case 0: // Top
+                x = Math.random() * ctx.canvas.width;
+                y = 0;
+                break;
+            case 1: // Right
+                x = ctx.canvas.width;
+                y = Math.random() * ctx.canvas.height;
+                break;
+            case 2: // Bottom
+                x = Math.random() * ctx.canvas.width;
+                y = ctx.canvas.height;
+                break;
+            default: // Left
+                x = 0;
+                y = Math.random() * ctx.canvas.height;
+                break;
+        }
+
+        const asteroid = new Asteroid(x, y, AsteroidSize.Large);
+        this.asteroids.push(asteroid);
+        this.gameObjects.push(asteroid);
+    }
+
+    private checkCollisions(): void {
+        // Check bullet-asteroid collisions
+        this.player.getBullets().forEach(bullet => {
+            this.asteroids.forEach(asteroid => {
+                const distance = bullet.getPosition().subtract(asteroid.getPosition()).magnitude();
+                if (distance < asteroid.getCollisionRadius()) {
+                    bullet.setActive(false);
+                    this.splitAsteroid(asteroid);
+                }
+            });
+        });
+
+        // Check player-asteroid collisions
+        if (this.player.isActive() && !this.player.isExploding()) {
+            this.asteroids.forEach(asteroid => {
+                const distance = this.player.getPosition().subtract(asteroid.getPosition()).magnitude();
+                if (distance < this.player.getCollisionRadius() + asteroid.getCollisionRadius()) {
+                    this.player.explode();
+                    this.resetPlayer();
+                }
+            });
+        }
+    }
+
+    private splitAsteroid(asteroid: Asteroid): void {
+        // Remove the original asteroid
+        const asteroidIndex = this.asteroids.indexOf(asteroid);
+        if (asteroidIndex > -1) {
+            this.asteroids.splice(asteroidIndex, 1);
+            const gameObjIndex = this.gameObjects.indexOf(asteroid);
+            if (gameObjIndex > -1) {
+                this.gameObjects.splice(gameObjIndex, 1);
+            }
+        }
+
+        // Update score
+        this.score += 100;
+
+        // Create new asteroids if not smallest
+        if (asteroid.getSize() > AsteroidSize.Small) {
+            const newSize = asteroid.getSize() - 1;
+            for (let i = 0; i < 2; i++) {
+                const newAsteroid = new Asteroid(
+                    asteroid.getPosition().x,
+                    asteroid.getPosition().y,
+                    newSize
+                );
+                this.asteroids.push(newAsteroid);
+                this.gameObjects.push(newAsteroid);
+            }
+        }
+
+        // Check if level complete
+        if (this.asteroids.length === 0) {
+            this.level++;
+            this.startLevel();
+        }
+    }
+
+    private resetPlayer(): void {
+        setTimeout(() => {
+            this.player = new Player(
+                this.canvas.width / 2,
+                this.canvas.height / 2
+            );
+            const playerIndex = this.gameObjects.findIndex(obj => obj instanceof Player);
+            if (playerIndex > -1) {
+                this.gameObjects[playerIndex] = this.player;
+            } else {
+                this.gameObjects.push(this.player);
+            }
+        }, 2000);
+    }
+}   

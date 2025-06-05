@@ -1,14 +1,16 @@
 import { AsteroidsGame } from './game/AsteroidsGame';
 import './style.css';
 
-// Create game container and canvas
-const app = document.querySelector<HTMLDivElement>('#app')!;
-app.innerHTML = `
-  <div class="game-container">
-    <canvas id="gameCanvas"></canvas>
-  </div>
-`;
+// Get the canvas element
+const canvas = document.getElementById('gameCanvas');
+if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error('Canvas element not found');
+}
 
-// Initialize and start the game
-const game = new AsteroidsGame('gameCanvas');
+// Set canvas size
+canvas.width = 800;
+canvas.height = 600;
+
+// Create and start game
+const game = new AsteroidsGame(canvas);
 game.start();

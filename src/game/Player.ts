@@ -260,4 +260,8 @@ export class Player extends GameObject {
 
         ctx.restore();
     }
+
+    public isExploding(): boolean {
+        return this.exploding;
+    }
 } 

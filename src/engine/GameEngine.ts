@@ -1,79 +1,55 @@
-export class GameEngine {
-    private canvas: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
-    private isPaused: boolean = false;
-    private last: number = performance.now();
-    private readonly targetFps: number = 60;
-    private readonly frameInterval: number = 1000 / this.targetFps;
+import { GameObject } from '../game/GameObject';
 
-    constructor(canvasId: string) {
-        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-        if (!canvas) {
-            throw new Error(`Canvas with id ${canvasId} not found`);
-        }
+export abstract class GameEngine {
+    protected gameObjects: GameObject[] = [];
+    private lastTime: number = 0;
+    private running: boolean = false;
+    protected canvas: HTMLCanvasElement;
+
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            throw new Error('Could not get 2D context');
-        }
-        this.ctx = ctx;
+    }
 
-        // Setup pause/unpause handlers
-        window.addEventListener('blur', () => this.isPaused = true);
-        window.addEventListener('focus', () => {
-            if (this.isPaused) {
-                this.last = performance.now();
-                this.isPaused = false;
+    public start(): void {
+        if (!this.running) {
+            this.running = true;
+            this.lastTime = performance.now();
+            requestAnimationFrame(this.gameLoop.bind(this));
+        }
+    }
+
+    public stop(): void {
+        this.running = false;
+    }
+
+    private gameLoop(currentTime: number): void {
+        if (!this.running) return;
+
+        const delta = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+
+        this.update(delta);
+        this.draw();
+
+        requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    protected update(delta: number): void {
+        // Update all game objects
+        this.gameObjects.forEach(obj => {
+            if (obj.isActive()) {
+                obj.update(delta);
             }
         });
     }
 
-    public start(): void {
-        this.gameLoop();
-    }
+    protected abstract draw(): void;
 
-    private gameLoop = (): void => {
-        if (!this.isPaused) {
-            const now = performance.now();
-            const delta = now - this.last;
-
-            // Only update if we've exceeded our target frame interval
-            if (delta >= this.frameInterval) {
-                // Update game state
-                this.update(delta);
-
-                // Clear canvas
-                this.clear();
-
-                // Draw game state
-                this.draw();
-
-                // Update last frame time, accounting for any extra time beyond the frame interval
-                this.last = now - (delta % this.frameInterval);
-            }
+    protected getContext(): CanvasRenderingContext2D {
+        const context = this.canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Could not get 2D context from canvas');
         }
-        requestAnimationFrame(this.gameLoop);
-    }
-
-    private clear(): void {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "#000000";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    protected update(delta: number): void {
-        // To be overridden by game implementation
-    }
-
-    protected draw(): void {
-        // To be overridden by game implementation
-    }
-
-    public getContext(): CanvasRenderingContext2D {
-        return this.ctx;
-    }
-
-    public getCanvas(): HTMLCanvasElement {
-        return this.canvas;
+        return context;
     }
 } 
