@@ -44,23 +44,7 @@ export class Asteroid extends GameObject {
         ctx.beginPath();
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 2;
-
-        // Draw irregular polygon
-        const vertices = 8;
-        for (let i = 0; i < vertices; i++) {
-            const angle = (i / vertices) * Math.PI * 2;
-            const jitter = 0.2; // How irregular the shape is
-            const r = radius * (1 + (Math.random() * 2 - 1) * jitter);
-            const x = Math.cos(angle) * r;
-            const y = Math.sin(angle) * r;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.closePath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.stroke();
 
         ctx.restore();
