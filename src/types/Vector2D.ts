@@ -35,4 +35,8 @@ export class Vector2D {
     clone(): Vector2D {
         return new Vector2D(this.x, this.y);
     }
+
+    dot(other: Vector2D): number {
+        return this.x * other.x + this.y * other.y;
+    }
 } 

@@ -6,17 +6,19 @@ import { Bullet } from './Bullet';
 export class Player extends GameObject {
     private readonly ROTATION_SPEED = Math.PI; // Radians per second
     private readonly ACCELERATION = 200; // Pixels per second squared
+    private readonly DECELERATION = 300; // Pixels per second squared (faster than acceleration)
     private readonly FRICTION = 0.99; // Velocity multiplier per second
     private readonly MAX_SPEED = 400; // Maximum speed in pixels per second
     private readonly FIRE_RATE = 250; // Milliseconds between shots
     private readonly COLLISION_RADIUS = 15; // Pixels
     private readonly EXPLOSION_DURATION = 2000; // Milliseconds
     private readonly CHEVRON_DEPTH = 5; // How far up the base point moves
-    private readonly MIN_THRUST_SPEED = 50; // Speed at which thrust starts showing
-    private readonly MAX_THRUST_SPEED = 200; // Speed at which thrust is fully visible
+    private readonly THRUST_FADE_DURATION = 600; // Milliseconds for thrust fade in/out
 
     private input: InputManager;
     private thrusting: boolean = false;
+    private reversing: boolean = false;
+    private lastThrustTime: number = 0;
     private lastFireTime: number = 0;
     private bullets: Bullet[] = [];
     private exploding: boolean = false;
@@ -44,8 +46,24 @@ export class Player extends GameObject {
             this.rotation += this.ROTATION_SPEED * delta / 1000;
         }
 
-        // Handle thrust
+        // Handle thrust and reverse
+        const wasThrusting = this.thrusting;
+        const wasReversing = this.reversing;
         this.thrusting = this.input.isKeyPressed('ArrowUp');
+        this.reversing = this.input.isKeyPressed('ArrowDown');
+
+        // Can't thrust and reverse at the same time
+        if (this.thrusting && this.reversing) {
+            this.thrusting = false;
+            this.reversing = false;
+        }
+        
+        // Update thrust timing when state changes
+        if (this.thrusting !== wasThrusting || this.reversing !== wasReversing) {
+            this.lastThrustTime = 0;
+        }
+        this.lastThrustTime += delta;
+
         if (this.thrusting) {
             const thrustVector = new Vector2D(0, -1)
                 .rotate(this.rotation)
@@ -56,6 +74,27 @@ export class Player extends GameObject {
             const speed = this.velocity.magnitude();
             if (speed > this.MAX_SPEED) {
                 this.velocity = this.velocity.multiply(this.MAX_SPEED / speed);
+            }
+        } else if (this.reversing) {
+            // Get ship's forward direction vector
+            const shipDirection = new Vector2D(0, -1).rotate(this.rotation);
+            
+            // Project current velocity onto ship's direction
+            const projection = this.velocity.dot(shipDirection);
+            
+            // Only decelerate if we have forward velocity
+            if (projection > 0) {
+                // Calculate deceleration that would occur this frame
+                const decelAmount = this.DECELERATION * delta / 1000;
+                
+                // If we would decelerate past zero in this direction, remove all velocity in this direction
+                if (decelAmount >= projection) {
+                    // Remove the projected component from velocity
+                    this.velocity = this.velocity.subtract(shipDirection.multiply(projection));
+                } else {
+                    // Apply deceleration in ship's direction
+                    this.velocity = this.velocity.subtract(shipDirection.multiply(decelAmount));
+                }
             }
         }
 
@@ -111,22 +150,23 @@ export class Player extends GameObject {
         ctx.lineTo(0, -15);     // Back to nose
         ctx.stroke();
 
-        // Calculate thrust alpha based on velocity
-        const speed = this.velocity.magnitude();
-        if (speed > this.MIN_THRUST_SPEED) {
-            // Calculate thrust alpha based on current speed
-            const thrustAlpha = Math.min(1, (speed - this.MIN_THRUST_SPEED) / 
-                (this.MAX_THRUST_SPEED - this.MIN_THRUST_SPEED));
-            
-            // Only show thrust when actually thrusting or at significant speed
-            if (this.thrusting || thrustAlpha > 0.3) {
-                ctx.beginPath();
-                ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
-                ctx.moveTo(-5, 15);    // Left
-                ctx.lineTo(0, 20);     // Bottom
-                ctx.lineTo(5, 15);     // Right
-                ctx.stroke();
-            }
+        // Calculate thrust alpha based on timing
+        let thrustAlpha = 0;
+        if (this.thrusting) {  // Only show thrust during forward acceleration
+            // Fade in
+            thrustAlpha = Math.min(1, this.lastThrustTime / this.THRUST_FADE_DURATION);
+        } else if (this.lastThrustTime < this.THRUST_FADE_DURATION) {
+            // Fade out
+            thrustAlpha = 1 - (this.lastThrustTime / this.THRUST_FADE_DURATION);
+        }
+
+        if (thrustAlpha > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
+            ctx.moveTo(-5, 15);    // Left
+            ctx.lineTo(0, 20);     // Bottom
+            ctx.lineTo(5, 15);     // Right
+            ctx.stroke();
         }
 
         ctx.restore();
@@ -155,6 +195,11 @@ export class Player extends GameObject {
             this.exploding = true;
             this.explosionTime = 0;
             this.explosionLines = [];
+            
+            // Reset thrust state
+            this.thrusting = false;
+            this.reversing = false;
+            this.lastThrustTime = 0;
 
             // Ship points for explosion with chevron
             const baseY = 15 - this.CHEVRON_DEPTH;
