@@ -129,47 +129,46 @@ export class Player extends GameObject {
             return;
         }
 
-        ctx.save();
-        ctx.translate(this.position.x, this.position.y);
-        ctx.rotate(this.rotation);
+        this.drawWrapped(ctx, () => {
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.rotation);
 
-        // Draw the ship
-        ctx.beginPath();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-
-        // Calculate base point using trigonometry
-        const baseX = 0;
-        const baseY = 15 - this.CHEVRON_DEPTH;
-
-        // Draw triangle with chevron base
-        ctx.moveTo(0, -15);     // Nose
-        ctx.lineTo(10, 15);     // Bottom right
-        ctx.lineTo(baseX, baseY); // Base middle point
-        ctx.lineTo(-10, 15);    // Bottom left
-        ctx.lineTo(0, -15);     // Back to nose
-        ctx.stroke();
-
-        // Calculate thrust alpha based on timing
-        let thrustAlpha = 0;
-        if (this.thrusting) {  // Only show thrust during forward acceleration
-            // Fade in
-            thrustAlpha = Math.min(1, this.lastThrustTime / this.THRUST_FADE_DURATION);
-        } else if (this.lastThrustTime < this.THRUST_FADE_DURATION) {
-            // Fade out
-            thrustAlpha = 1 - (this.lastThrustTime / this.THRUST_FADE_DURATION);
-        }
-
-        if (thrustAlpha > 0) {
+            // Draw the ship
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
-            ctx.moveTo(-5, 15);    // Left
-            ctx.lineTo(0, 20);     // Bottom
-            ctx.lineTo(5, 15);     // Right
-            ctx.stroke();
-        }
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
 
-        ctx.restore();
+            // Calculate base point using trigonometry
+            const baseX = 0;
+            const baseY = 15 - this.CHEVRON_DEPTH;
+
+            // Draw triangle with chevron base
+            ctx.moveTo(0, -15);     // Nose
+            ctx.lineTo(10, 15);     // Bottom right
+            ctx.lineTo(baseX, baseY); // Base middle point
+            ctx.lineTo(-10, 15);    // Bottom left
+            ctx.lineTo(0, -15);     // Back to nose
+            ctx.stroke();
+
+            // Calculate thrust alpha based on timing
+            let thrustAlpha = 0;
+            if (this.thrusting) {  // Only show thrust during forward acceleration
+                // Fade in
+                thrustAlpha = Math.min(1, this.lastThrustTime / this.THRUST_FADE_DURATION);
+            } else if (this.lastThrustTime < this.THRUST_FADE_DURATION) {
+                // Fade out
+                thrustAlpha = 1 - (this.lastThrustTime / this.THRUST_FADE_DURATION);
+            }
+
+            if (thrustAlpha > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
+                ctx.moveTo(-5, 15);    // Left
+                ctx.lineTo(0, 20);     // Bottom
+                ctx.lineTo(5, 15);     // Right
+                ctx.stroke();
+            }
+        });
     }
 
     private tryShoot(): void {
@@ -263,5 +262,9 @@ export class Player extends GameObject {
 
     public isExploding(): boolean {
         return this.exploding;
+    }
+
+    protected getWrapRadius(): number {
+        return this.COLLISION_RADIUS;
     }
 } 

@@ -17,6 +17,71 @@ export abstract class GameObject {
 
     public abstract update(delta: number): void;
     public abstract draw(ctx: CanvasRenderingContext2D): void;
+    protected abstract getWrapRadius(): number;
+
+    protected drawWrapped(ctx: CanvasRenderingContext2D, drawFn: () => void): void {
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        
+        // Original position
+        ctx.save();
+        drawFn();
+        ctx.restore();
+
+        // Get the wrap radius for this object
+        const radius = this.getWrapRadius();
+        
+        // Draw wrapped copies when near edges
+        if (this.position.x < radius) {
+            // Draw on right edge
+            ctx.save();
+            ctx.translate(width, 0);
+            drawFn();
+            ctx.restore();
+        } else if (this.position.x > width - radius) {
+            // Draw on left edge
+            ctx.save();
+            ctx.translate(-width, 0);
+            drawFn();
+            ctx.restore();
+        }
+
+        if (this.position.y < radius) {
+            // Draw on bottom edge
+            ctx.save();
+            ctx.translate(0, height);
+            drawFn();
+            ctx.restore();
+        } else if (this.position.y > height - radius) {
+            // Draw on top edge
+            ctx.save();
+            ctx.translate(0, -height);
+            drawFn();
+            ctx.restore();
+        }
+
+        // Draw corner copies when near corners
+        if ((this.position.x < radius && this.position.y < radius) ||
+            (this.position.x < radius && this.position.y > height - radius) ||
+            (this.position.x > width - radius && this.position.y < radius) ||
+            (this.position.x > width - radius && this.position.y > height - radius)) {
+            
+            // Draw diagonally wrapped copy
+            ctx.save();
+            if (this.position.x < radius) {
+                ctx.translate(width, 0);
+            } else {
+                ctx.translate(-width, 0);
+            }
+            if (this.position.y < radius) {
+                ctx.translate(0, height);
+            } else {
+                ctx.translate(0, -height);
+            }
+            drawFn();
+            ctx.restore();
+        }
+    }
 
     public isActive(): boolean {
         return this.active;

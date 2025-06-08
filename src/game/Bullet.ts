@@ -29,15 +29,18 @@ export class Bullet extends GameObject {
     public draw(ctx: CanvasRenderingContext2D): void {
         if (!this.active) return;
 
-        ctx.save();
-        ctx.translate(this.position.x, this.position.y);
-        
-        ctx.beginPath();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.arc(0, 0, 2, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        ctx.restore();
+        this.drawWrapped(ctx, () => {
+            ctx.translate(this.position.x, this.position.y);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.arc(0, 0, 2, 0, Math.PI * 2);
+            ctx.stroke();
+        });
+    }
+
+    protected getWrapRadius(): number {
+        return 2;
     }
 } 

@@ -36,18 +36,17 @@ export class Asteroid extends GameObject {
     }
 
     public draw(ctx: CanvasRenderingContext2D): void {
-        ctx.save();
-        ctx.translate(this.position.x, this.position.y);
-        ctx.rotate(this.rotation);
+        this.drawWrapped(ctx, () => {
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.rotation);
 
-        const radius = this.size * 10;
-        ctx.beginPath();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.restore();
+            const radius = this.size * 10;
+            ctx.beginPath();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        });
     }
 
     public getSize(): AsteroidSize {
@@ -55,6 +54,10 @@ export class Asteroid extends GameObject {
     }
 
     public getCollisionRadius(): number {
+        return this.size * 10;
+    }
+
+    protected getWrapRadius(): number {
         return this.size * 10;
     }
 
