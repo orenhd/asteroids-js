@@ -117,6 +117,53 @@ export abstract class GameObject {
         this.rotation = rotation;
     }
 
+    public getWrappedPositions(width: number, height: number): Vector2D[] {
+        const positions: Vector2D[] = [this.position.clone()];
+        
+        // Check if we need to add wrapped positions
+        const radius = this.getWrapRadius();
+        
+        // Add horizontal wraps
+        if (this.position.x < radius) {
+            positions.push(new Vector2D(this.position.x + width, this.position.y));
+        } else if (this.position.x > width - radius) {
+            positions.push(new Vector2D(this.position.x - width, this.position.y));
+        }
+
+        // Add vertical wraps
+        if (this.position.y < radius) {
+            positions.push(new Vector2D(this.position.x, this.position.y + height));
+        } else if (this.position.y > height - radius) {
+            positions.push(new Vector2D(this.position.x, this.position.y - height));
+        }
+
+        // Add corner wraps
+        if ((this.position.x < radius && this.position.y < radius) ||
+            (this.position.x < radius && this.position.y > height - radius) ||
+            (this.position.x > width - radius && this.position.y < radius) ||
+            (this.position.x > width - radius && this.position.y > height - radius)) {
+            
+            let wrappedX = this.position.x;
+            let wrappedY = this.position.y;
+            
+            if (this.position.x < radius) {
+                wrappedX += width;
+            } else if (this.position.x > width - radius) {
+                wrappedX -= width;
+            }
+            
+            if (this.position.y < radius) {
+                wrappedY += height;
+            } else if (this.position.y > height - radius) {
+                wrappedY -= height;
+            }
+            
+            positions.push(new Vector2D(wrappedX, wrappedY));
+        }
+
+        return positions;
+    }
+
     protected wrapPosition(width: number, height: number): void {
         if (this.position.x < 0) this.position.x = width;
         if (this.position.x > width) this.position.x = 0;

@@ -76,11 +76,30 @@ export class AsteroidsGame extends GameEngine {
     }
 
     private checkCollisions(): void {
+        const width = this.getContext().canvas.width;
+        const height = this.getContext().canvas.height;
+
         // Check bullet-asteroid collisions
         this.player.getBullets().forEach(bullet => {
+            const bulletPositions = bullet.getWrappedPositions(width, height);
+            
             this.asteroids.forEach(asteroid => {
-                const distance = bullet.getPosition().subtract(asteroid.getPosition()).magnitude();
-                if (distance < asteroid.getCollisionRadius()) {
+                const asteroidPositions = asteroid.getWrappedPositions(width, height);
+                
+                // Check all possible position combinations
+                let collision = false;
+                for (const bPos of bulletPositions) {
+                    for (const aPos of asteroidPositions) {
+                        const distance = bPos.subtract(aPos).magnitude();
+                        if (distance < asteroid.getCollisionRadius()) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    if (collision) break;
+                }
+
+                if (collision) {
                     bullet.setActive(false);
                     this.splitAsteroid(asteroid);
                 }
@@ -89,9 +108,25 @@ export class AsteroidsGame extends GameEngine {
 
         // Check player-asteroid collisions
         if (this.player.isActive() && !this.player.isExploding()) {
+            const playerPositions = this.player.getWrappedPositions(width, height);
+            
             this.asteroids.forEach(asteroid => {
-                const distance = this.player.getPosition().subtract(asteroid.getPosition()).magnitude();
-                if (distance < this.player.getCollisionRadius() + asteroid.getCollisionRadius()) {
+                const asteroidPositions = asteroid.getWrappedPositions(width, height);
+                
+                // Check all possible position combinations
+                let collision = false;
+                for (const pPos of playerPositions) {
+                    for (const aPos of asteroidPositions) {
+                        const distance = pPos.subtract(aPos).magnitude();
+                        if (distance < this.player.getCollisionRadius() + asteroid.getCollisionRadius()) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    if (collision) break;
+                }
+
+                if (collision) {
                     this.player.explode();
                     this.resetPlayer();
                 }
