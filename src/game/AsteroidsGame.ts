@@ -3,6 +3,15 @@ import { Player } from './Player';
 import { Asteroid, AsteroidSize } from './Asteroid';
 
 export class AsteroidsGame extends GameEngine {
+    private static readonly INITIAL_ASTEROIDS = 4;
+    private static readonly SCORE_PER_ASTEROID = 100;
+    private static readonly PLAYER_RESPAWN_DELAY = 2000; // milliseconds
+    private static readonly SCORE_TEXT_X = 10;
+    private static readonly SCORE_TEXT_Y = 30;
+    private static readonly LEVEL_TEXT_X = 10;
+    private static readonly LEVEL_TEXT_Y = 60;
+    private static readonly SCORE_FONT = '20px Arial';
+
     private player: Player;
     private asteroids: Asteroid[] = [];
     private score = 0;
@@ -32,16 +41,16 @@ export class AsteroidsGame extends GameEngine {
         this.gameObjects.forEach(obj => obj.draw(ctx));
 
         // Draw score
-        ctx.font = '20px Arial';
+        ctx.font = AsteroidsGame.SCORE_FONT;
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
-        ctx.fillText(`Score: ${this.score}`, 10, 30);
-        ctx.fillText(`Level: ${this.level}`, 10, 60);
+        ctx.fillText(`Score: ${this.score}`, AsteroidsGame.SCORE_TEXT_X, AsteroidsGame.SCORE_TEXT_Y);
+        ctx.fillText(`Level: ${this.level}`, AsteroidsGame.LEVEL_TEXT_X, AsteroidsGame.LEVEL_TEXT_Y);
     }
 
     private startLevel(): void {
         // Create initial asteroids
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < AsteroidsGame.INITIAL_ASTEROIDS; i++) {
             this.createAsteroid();
         }
     }
@@ -146,7 +155,7 @@ export class AsteroidsGame extends GameEngine {
         }
 
         // Update score
-        this.score += 100;
+        this.score += AsteroidsGame.SCORE_PER_ASTEROID;
 
         // Create new asteroids if not smallest
         if (asteroid.getSize() > AsteroidSize.Small) {
@@ -181,6 +190,6 @@ export class AsteroidsGame extends GameEngine {
             } else {
                 this.gameObjects.push(this.player);
             }
-        }, 2000);
+        }, AsteroidsGame.PLAYER_RESPAWN_DELAY);
     }
 }   

@@ -4,16 +4,21 @@ import { InputManager } from '../engine/InputManager';
 import { Bullet } from './Bullet';
 
 export class Player extends GameObject {
-    private readonly ROTATION_SPEED = Math.PI; // Radians per second
-    private readonly ACCELERATION = 200; // Pixels per second squared
-    private readonly DECELERATION = 300; // Pixels per second squared (faster than acceleration)
-    private readonly FRICTION = 0.99; // Velocity multiplier per second
-    private readonly MAX_SPEED = 400; // Maximum speed in pixels per second
-    private readonly FIRE_RATE = 250; // Milliseconds between shots
-    private readonly COLLISION_RADIUS = 15; // Pixels
-    private readonly EXPLOSION_DURATION = 2000; // Milliseconds
-    private readonly CHEVRON_DEPTH = 5; // How far up the base point moves
-    private readonly THRUST_FADE_DURATION = 600; // Milliseconds for thrust fade in/out
+    private static readonly ROTATION_SPEED = Math.PI; // Radians per second
+    private static readonly ACCELERATION = 200; // Pixels per second squared
+    private static readonly DECELERATION = 300; // Pixels per second squared (faster than acceleration)
+    private static readonly FRICTION = 0.99; // Velocity multiplier per second
+    private static readonly MAX_SPEED = 400; // Maximum speed in pixels per second
+    private static readonly FIRE_RATE = 250; // Milliseconds between shots
+    private static readonly COLLISION_RADIUS = 15; // Pixels
+    private static readonly EXPLOSION_DURATION = 2000; // Milliseconds
+    private static readonly CHEVRON_DEPTH = 5; // How far up the base point moves
+    private static readonly THRUST_FADE_DURATION = 600; // Milliseconds for thrust fade in/out
+    private static readonly SHIP_HEIGHT = 15; // Pixels
+    private static readonly SHIP_WIDTH = 10; // Pixels
+    private static readonly THRUST_WIDTH = 5; // Pixels
+    private static readonly THRUST_LENGTH = 5; // Pixels
+    private static readonly LINE_WIDTH = 2;
 
     private input: InputManager;
     private thrusting: boolean = false;
@@ -40,10 +45,10 @@ export class Player extends GameObject {
 
         // Handle rotation
         if (this.input.isKeyPressed('ArrowLeft')) {
-            this.rotation -= this.ROTATION_SPEED * delta / 1000;
+            this.rotation -= Player.ROTATION_SPEED * delta / 1000;
         }
         if (this.input.isKeyPressed('ArrowRight')) {
-            this.rotation += this.ROTATION_SPEED * delta / 1000;
+            this.rotation += Player.ROTATION_SPEED * delta / 1000;
         }
 
         // Handle thrust and reverse
@@ -67,13 +72,13 @@ export class Player extends GameObject {
         if (this.thrusting) {
             const thrustVector = new Vector2D(0, -1)
                 .rotate(this.rotation)
-                .multiply(this.ACCELERATION * delta / 1000);
+                .multiply(Player.ACCELERATION * delta / 1000);
             this.velocity = this.velocity.add(thrustVector);
 
             // Limit speed
             const speed = this.velocity.magnitude();
-            if (speed > this.MAX_SPEED) {
-                this.velocity = this.velocity.multiply(this.MAX_SPEED / speed);
+            if (speed > Player.MAX_SPEED) {
+                this.velocity = this.velocity.multiply(Player.MAX_SPEED / speed);
             }
         } else if (this.reversing) {
             // Get ship's forward direction vector
@@ -85,7 +90,7 @@ export class Player extends GameObject {
             // Only decelerate if we have forward velocity
             if (projection > 0) {
                 // Calculate deceleration that would occur this frame
-                const decelAmount = this.DECELERATION * delta / 1000;
+                const decelAmount = Player.DECELERATION * delta / 1000;
                 
                 // If we would decelerate past zero in this direction, remove all velocity in this direction
                 if (decelAmount >= projection) {
@@ -104,7 +109,7 @@ export class Player extends GameObject {
         }
 
         // Apply friction
-        this.velocity = this.velocity.multiply(Math.pow(this.FRICTION, delta / 1000));
+        this.velocity = this.velocity.multiply(Math.pow(Player.FRICTION, delta / 1000));
 
         // Move the ship
         this.moveByVelocity(delta);
@@ -136,45 +141,45 @@ export class Player extends GameObject {
             // Draw the ship
             ctx.beginPath();
             ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = Player.LINE_WIDTH;
 
             // Calculate base point using trigonometry
             const baseX = 0;
-            const baseY = 15 - this.CHEVRON_DEPTH;
+            const baseY = Player.SHIP_HEIGHT - Player.CHEVRON_DEPTH;
 
             // Draw triangle with chevron base
-            ctx.moveTo(0, -15);     // Nose
-            ctx.lineTo(10, 15);     // Bottom right
+            ctx.moveTo(0, -Player.SHIP_HEIGHT);     // Nose
+            ctx.lineTo(Player.SHIP_WIDTH, Player.SHIP_HEIGHT);     // Bottom right
             ctx.lineTo(baseX, baseY); // Base middle point
-            ctx.lineTo(-10, 15);    // Bottom left
-            ctx.lineTo(0, -15);     // Back to nose
+            ctx.lineTo(-Player.SHIP_WIDTH, Player.SHIP_HEIGHT);    // Bottom left
+            ctx.lineTo(0, -Player.SHIP_HEIGHT);     // Back to nose
             ctx.stroke();
 
             // Calculate thrust alpha based on timing
             let thrustAlpha = 0;
             if (this.thrusting) {  // Only show thrust during forward acceleration
                 // Fade in
-                thrustAlpha = Math.min(1, this.lastThrustTime / this.THRUST_FADE_DURATION);
-            } else if (this.lastThrustTime < this.THRUST_FADE_DURATION) {
+                thrustAlpha = Math.min(1, this.lastThrustTime / Player.THRUST_FADE_DURATION);
+            } else if (this.lastThrustTime < Player.THRUST_FADE_DURATION) {
                 // Fade out
-                thrustAlpha = 1 - (this.lastThrustTime / this.THRUST_FADE_DURATION);
+                thrustAlpha = 1 - (this.lastThrustTime / Player.THRUST_FADE_DURATION);
             }
 
             if (thrustAlpha > 0) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(255, 255, 255, ${thrustAlpha})`;
-                ctx.moveTo(-5, 15);    // Left
-                ctx.lineTo(0, 20);     // Bottom
-                ctx.lineTo(5, 15);     // Right
+                ctx.moveTo(-Player.THRUST_WIDTH, Player.SHIP_HEIGHT);    // Left
+                ctx.lineTo(0, Player.SHIP_HEIGHT + Player.THRUST_LENGTH);     // Bottom
+                ctx.lineTo(Player.THRUST_WIDTH, Player.SHIP_HEIGHT);     // Right
                 ctx.stroke();
             }
         });
     }
 
     private tryShoot(): void {
-        if (this.lastFireTime >= this.FIRE_RATE) {
+        if (this.lastFireTime >= Player.FIRE_RATE) {
             const bulletPos = this.position.add(
-                new Vector2D(0, -15).rotate(this.rotation)
+                new Vector2D(0, -Player.SHIP_HEIGHT).rotate(this.rotation)
             );
             this.bullets.push(new Bullet(bulletPos, this.rotation));
             this.lastFireTime = 0;
@@ -186,7 +191,11 @@ export class Player extends GameObject {
     }
 
     public getCollisionRadius(): number {
-        return this.COLLISION_RADIUS;
+        return Player.COLLISION_RADIUS;
+    }
+
+    protected getWrapRadius(): number {
+        return Player.COLLISION_RADIUS;
     }
 
     public explode(): void {
@@ -201,12 +210,12 @@ export class Player extends GameObject {
             this.lastThrustTime = 0;
 
             // Ship points for explosion with chevron
-            const baseY = 15 - this.CHEVRON_DEPTH;
+            const baseY = Player.SHIP_HEIGHT - Player.CHEVRON_DEPTH;
             const points = [
-                new Vector2D(0, -15),     // Nose
-                new Vector2D(10, 15),     // Bottom right
+                new Vector2D(0, -Player.SHIP_HEIGHT),     // Nose
+                new Vector2D(Player.SHIP_WIDTH, Player.SHIP_HEIGHT),     // Bottom right
                 new Vector2D(0, baseY),   // Base middle
-                new Vector2D(-10, 15)     // Bottom left
+                new Vector2D(-Player.SHIP_WIDTH, Player.SHIP_HEIGHT)     // Bottom left
             ];
 
             // Create explosion lines
@@ -228,7 +237,7 @@ export class Player extends GameObject {
     private updateExplosion(delta: number): void {
         this.explosionTime += delta;
 
-        if (this.explosionTime >= this.EXPLOSION_DURATION) {
+        if (this.explosionTime >= Player.EXPLOSION_DURATION) {
             this.exploding = false;
             this.active = false;
             return;
@@ -246,9 +255,9 @@ export class Player extends GameObject {
         ctx.save();
         ctx.translate(this.position.x, this.position.y);
 
-        const alpha = 1 - (this.explosionTime / this.EXPLOSION_DURATION);
+        const alpha = 1 - (this.explosionTime / Player.EXPLOSION_DURATION);
         ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = Player.LINE_WIDTH;
 
         for (const line of this.explosionLines) {
             ctx.beginPath();
@@ -262,9 +271,5 @@ export class Player extends GameObject {
 
     public isExploding(): boolean {
         return this.exploding;
-    }
-
-    protected getWrapRadius(): number {
-        return this.COLLISION_RADIUS;
     }
 } 

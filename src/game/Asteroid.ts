@@ -8,6 +8,13 @@ export const enum AsteroidSize {
 }
 
 export class Asteroid extends GameObject {
+    private static readonly BASE_SPEED = 50;
+    private static readonly SPEED_INCREASE_PER_SIZE = 25;
+    private static readonly MAX_ROTATION_SPEED = Math.PI / 2; // radians per second
+    private static readonly SIZE_RADIUS_MULTIPLIER = 10;
+    private static readonly SPLIT_OFFSET = 20;
+    private static readonly NUM_SPLIT_ASTEROIDS = 2;
+
     private readonly rotationSpeed: number;
     private readonly size: AsteroidSize;
 
@@ -15,10 +22,10 @@ export class Asteroid extends GameObject {
         super(x, y);
         this.size = size;
         // Random rotation speed between -PI/2 and PI/2 radians per second
-        this.rotationSpeed = (Math.random() - 0.5) * Math.PI;
+        this.rotationSpeed = (Math.random() - 0.5) * Asteroid.MAX_ROTATION_SPEED * 2;
         
         // Set random velocity based on size
-        const speed = 50 + (4 - size) * 25; // Smaller asteroids move faster
+        const speed = Asteroid.BASE_SPEED + (4 - size) * Asteroid.SPEED_INCREASE_PER_SIZE; // Smaller asteroids move faster
         const angle = Math.random() * Math.PI * 2;
         this.velocity = new Vector2D(
             Math.cos(angle) * speed,
@@ -40,7 +47,7 @@ export class Asteroid extends GameObject {
             ctx.translate(this.position.x, this.position.y);
             ctx.rotate(this.rotation);
 
-            const radius = this.size * 10;
+            const radius = this.size * Asteroid.SIZE_RADIUS_MULTIPLIER;
             ctx.beginPath();
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 2;
@@ -54,11 +61,11 @@ export class Asteroid extends GameObject {
     }
 
     public getCollisionRadius(): number {
-        return this.size * 10;
+        return this.size * Asteroid.SIZE_RADIUS_MULTIPLIER;
     }
 
     protected getWrapRadius(): number {
-        return this.size * 10;
+        return this.size * Asteroid.SIZE_RADIUS_MULTIPLIER;
     }
 
     public split(): Asteroid[] {
@@ -70,10 +77,10 @@ export class Asteroid extends GameObject {
         const newAsteroids: Asteroid[] = [];
 
         // Create two smaller asteroids
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < Asteroid.NUM_SPLIT_ASTEROIDS; i++) {
             const offset = new Vector2D(
-                (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 20
+                (Math.random() - 0.5) * Asteroid.SPLIT_OFFSET,
+                (Math.random() - 0.5) * Asteroid.SPLIT_OFFSET
             );
             const newPos = this.position.add(offset);
             newAsteroids.push(new Asteroid(newPos.x, newPos.y, newSize));
