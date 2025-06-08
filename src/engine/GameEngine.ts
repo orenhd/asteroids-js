@@ -1,6 +1,8 @@
 import { GameObject } from '../game/GameObject';
 
 export abstract class GameEngine {
+    private static readonly TARGET_FPS = 60;
+    private static readonly FRAME_TIME = 1000 / GameEngine.TARGET_FPS;
     protected gameObjects: GameObject[] = [];
     private lastTime: number = 0;
     private running: boolean = false;
@@ -26,10 +28,13 @@ export abstract class GameEngine {
         if (!this.running) return;
 
         const delta = currentTime - this.lastTime;
-        this.lastTime = currentTime;
-
-        this.update(delta);
-        this.draw();
+        
+        // Only update if enough time has passed (frame limiting)
+        if (delta >= GameEngine.FRAME_TIME) {
+            this.lastTime = currentTime - (delta % GameEngine.FRAME_TIME);
+            this.update(delta);
+            this.draw();
+        }
 
         requestAnimationFrame(this.gameLoop.bind(this));
     }
