@@ -42,7 +42,7 @@ export abstract class GameEngine {
     protected update(delta: number): void {
         // Update all game objects
         this.gameObjects.forEach(obj => {
-            if (obj.isActive()) {
+            if (obj.isActive) {
                 obj.update(delta);
             }
         });

@@ -83,37 +83,35 @@ export abstract class GameObject {
         }
     }
 
-    public isActive(): boolean {
+    public get isActive(): boolean {
         return this.active;
     }
 
-    public setActive(active: boolean): void {
+    public set isActive(active: boolean) {
         this.active = active;
     }
 
-    public getPosition(): Vector2D {
+    public get pos(): Vector2D {
         return this.position.clone();
     }
 
-    public setPosition(x: number, y: number): void {
-        this.position.x = x;
-        this.position.y = y;
+    public set pos(position: { x: number, y: number }) {
+        this.position = new Vector2D(position.x, position.y);
     }
 
-    public getVelocity(): Vector2D {
+    public get vel(): Vector2D {
         return this.velocity.clone();
     }
 
-    public setVelocity(x: number, y: number): void {
-        this.velocity.x = x;
-        this.velocity.y = y;
+    public set vel(velocity: { x: number, y: number }) {
+        this.velocity = new Vector2D(velocity.x, velocity.y);
     }
 
-    public getRotation(): number {
+    public get rot(): number {
         return this.rotation;
     }
 
-    public setRotation(rotation: number): void {
+    public set rot(rotation: number) {
         this.rotation = rotation;
     }
 
@@ -164,14 +162,14 @@ export abstract class GameObject {
         return positions;
     }
 
-    protected wrapPosition(width: number, height: number): void {
-        if (this.position.x < 0) this.position.x = width;
-        if (this.position.x > width) this.position.x = 0;
-        if (this.position.y < 0) this.position.y = height;
-        if (this.position.y > height) this.position.y = 0;
-    }
-
     protected moveByVelocity(delta: number): void {
         this.position = this.position.add(this.velocity.multiply(delta / 1000));
+    }
+
+    protected wrapPosition(width: number, height: number): void {
+        if (this.position.x < 0) this.position.x += width;
+        if (this.position.x >= width) this.position.x -= width;
+        if (this.position.y < 0) this.position.y += height;
+        if (this.position.y >= height) this.position.y -= height;
     }
 } 

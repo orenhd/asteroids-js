@@ -116,7 +116,7 @@ export class Player extends GameObject {
         this.wrapPosition(800, 600); // TODO: Get actual canvas dimensions
 
         // Update bullets
-        this.bullets = this.bullets.filter(bullet => bullet.isActive());
+        this.bullets = this.bullets.filter(bullet => bullet.isActive);
         this.bullets.forEach(bullet => bullet.update(delta));
 
         // Update last fire time

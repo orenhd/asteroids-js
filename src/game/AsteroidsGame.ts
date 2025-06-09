@@ -109,14 +109,14 @@ export class AsteroidsGame extends GameEngine {
                 }
 
                 if (collision) {
-                    bullet.setActive(false);
+                    bullet.isActive = false;
                     this.splitAsteroid(asteroid);
                 }
             });
         });
 
         // Check player-asteroid collisions
-        if (this.player.isActive() && !this.player.isExploding()) {
+        if (this.player.isActive && !this.player.isExploding()) {
             const playerPositions = this.player.getWrappedPositions(width, height);
             
             this.asteroids.forEach(asteroid => {
@@ -162,8 +162,8 @@ export class AsteroidsGame extends GameEngine {
             const newSize = asteroid.getSize() - 1;
             for (let i = 0; i < 2; i++) {
                 const newAsteroid = new Asteroid(
-                    asteroid.getPosition().x,
-                    asteroid.getPosition().y,
+                    asteroid.pos.x,
+                    asteroid.pos.y,
                     newSize
                 );
                 this.asteroids.push(newAsteroid);
