@@ -1,5 +1,6 @@
 import { GameObject } from './GameObject';
 import { Vector2D } from '../types/Vector2D';
+import { GAME_CONSTANTS } from '../constants';
 
 export class Bullet extends GameObject {
     private static readonly BULLET_SPEED = 500; // Pixels per second
@@ -26,7 +27,7 @@ export class Bullet extends GameObject {
         }
 
         this.moveByVelocity(delta);
-        this.wrapPosition(800, 600); // TODO: Get actual canvas dimensions
+        this.wrapPosition(GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
     }
 
     public draw(ctx: CanvasRenderingContext2D): void {

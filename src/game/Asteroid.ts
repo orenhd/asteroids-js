@@ -1,5 +1,6 @@
 import { GameObject } from './GameObject';
 import { Vector2D } from '../types/Vector2D';
+import { GAME_CONSTANTS } from '../constants';
 
 export const enum AsteroidSize {
     Large = 3,
@@ -39,7 +40,7 @@ export class Asteroid extends GameObject {
         
         // Move the asteroid
         this.moveByVelocity(delta);
-        this.wrapPosition(800, 600); // TODO: Get actual canvas dimensions
+        this.wrapPosition(GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
     }
 
     public draw(ctx: CanvasRenderingContext2D): void {

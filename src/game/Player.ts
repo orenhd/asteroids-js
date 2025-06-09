@@ -2,6 +2,7 @@ import { GameObject } from './GameObject';
 import { Vector2D } from '../types/Vector2D';
 import { InputManager } from '../engine/InputManager';
 import { Bullet } from './Bullet';
+import { GAME_CONSTANTS } from '../constants';
 
 export class Player extends GameObject {
     private static readonly ROTATION_SPEED = Math.PI; // Radians per second
@@ -113,7 +114,7 @@ export class Player extends GameObject {
 
         // Move the ship
         this.moveByVelocity(delta);
-        this.wrapPosition(800, 600); // TODO: Get actual canvas dimensions
+        this.wrapPosition(GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
 
         // Update bullets
         this.bullets = this.bullets.filter(bullet => bullet.isActive);
